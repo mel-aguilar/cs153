@@ -77,9 +77,9 @@ main(int argc, char *argv[])
 
   if(argc < 2){
     ls(".");
-    exit();
+    exit(0);	//i think havinf "." implies that you meant to open a file instead of trying to display the files of a directory
   }
   for(i=1; i<argc; i++)
     ls(argv[i]);
-  exit();
+  exit(0);
 }

@@ -225,12 +225,13 @@ fork(void)
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
 void
-exit(void)
+exit(int status)	//parameter was a void type, we changed it to int status
 {
   struct proc *curproc = myproc();
   struct proc *p;
   int fd;
-
+  curproc->status = status;
+ 
   if(curproc == initproc)
     panic("init exiting");
 
@@ -270,7 +271,7 @@ exit(void)
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int
-wait(void)
+wait(int *status)	//parameter was void
 {
   struct proc *p;
   int havekids, pid;
@@ -286,6 +287,9 @@ wait(void)
       havekids = 1;
       if(p->state == ZOMBIE){
         // Found one.
+        if(status) {
+           *status = p->status;
+        }
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
@@ -310,6 +314,48 @@ wait(void)
     sleep(curproc, &ptable.lock);  //DOC: wait-sleep
   }
 }
+
+int waitpid(int pid, int *status, int options){
+
+    struct proc *p;
+    int kids;
+    struct proc *curproc = myproc();
+
+    acquire(&ptable.lock);
+    for(;;){
+       kids = 0;
+          for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+                if(p ->pid != pid){
+                   continue;
+                }
+                kids = 1;
+		if(p->state == ZOMBIE) {
+		   
+                   if(status) {                                                                                                                                                                                                          *status = p->status;
+		   }
+                   pid = p->pid;
+                   kfree(p->kstack);
+                   p->kstack = 0;
+                   freevm(p->pgdir);
+                   p->pid =0;
+                   p->parent = 0;
+                   p->name[0] = 0;
+                   p->killed = 0;
+                   p->state = UNUSED;
+                   //status = p->status;
+                   release(&ptable.lock);
+                   return pid;
+                   }
+         }
+         if(kids == 0 || curproc->killed){
+            release(&ptable.lock);
+            *status = -1;
+            return -1;
+        }
+        sleep(p,&ptable.lock);
+   }
+} 
+
 
 //PAGEBREAK: 42
 // Per-CPU process scheduler.

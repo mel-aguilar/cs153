@@ -25,24 +25,24 @@ forktest(void)
     if(pid < 0)
       break;
     if(pid == 0)
-      exit();
+      exit(0); 	///because pid corresponds to a child and i think you want to exit the child process normally
   }
 
   if(n == N){
     printf(1, "fork claimed to work N times!\n", N);
-    exit();
+    exit(0);	//because this file chicks to see if fork "fails gracefully" and we dont really use anything in this file, then we could just exit normally after displaying comments
   }
 
   for(; n > 0; n--){
-    if(wait() < 0){
+    if(wait(0) < 0){
       printf(1, "wait stopped early\n");
-      exit();
+      exit(0);
     }
   }
 
-  if(wait() != -1){
+  if(wait(0) != -1){
     printf(1, "wait got too many\n");
-    exit();
+    exit(0);
   }
 
   printf(1, "fork test OK\n");
@@ -52,5 +52,5 @@ int
 main(void)
 {
   forktest();
-  exit();
+  exit(0);
 }
