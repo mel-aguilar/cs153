@@ -400,26 +400,34 @@ scheduler(void)
         	c->proc = p;
       		switchuvm(p);
       		p->state = RUNNING;
-      		swtch(&(c->scheduler), p->context);
-      		switchkvm();
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      		c->proc = 0;
-		if(p->priority > 31) {
+		
+		if(p->priority > 30) {
 			p->priority = 31;
 		}
 		else {
 			p->priority = p->priority + 1;
 		}
+      		swtch(&(c->scheduler), p->context);
+      		switchkvm();
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      		c->proc = 0;
+		//if(p->priority > 31) {
+		//	p->priority = 31;
+		//}
+		//else {
+		//	p->priority = p->priority + 1;
+		//}
       	}
-	if(min < p->priority) {
-		printf(1, "Current Priority Value: %d \n: ", p->priority);
+	else if(min < p->priority) {
+		//printf(1, "Current Priority Value: %d \n: ", p->priority);
 		p->priority = p->priority - 1;
-	}
-	else if(p->priority < 0) {
-		p->priority = 0;
-	}
-    }		
+	//}
+		if(p->priority < 0) {
+			p->priority = 0;
+		}
+    	}
+     }		
 	release(&ptable.lock);	   
   } 
 }
@@ -436,6 +444,7 @@ int setpriority(int prior) {
 	acquire(&ptable.lock);
 	currproc->priority = prior;
 	release(&ptable.lock);
+	yield();
 	return 0;
 }
 

@@ -36,6 +36,9 @@ int main(int argc, char *argv[])
 
 		setpriority(30-10*i);	
 		for (j=0;j<50000;j++) {
+			if(j % 10000 == 0 && j != 0) {
+				printf(1, "\n child# %d with priority %d is running with priority %d \n", getpid(), 30-10*i, getpriority());
+			}
 			for(k=0;k<1000;k++) {
 				asm("nop"); }}
 		printf(1, "\n Priority of process: %d \n", getpriority());
