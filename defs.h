@@ -121,6 +121,10 @@ void            userinit(void);
 //int             wait(void);
 int wait(int *status); //this is what we changed
 int waitpid(int pid, int *status, int options); //this is what we changed
+int setpriority(int prior); //this is what we added
+int getpriority(void);
+
+
 void            wakeup(void*);
 void            yield(void);
 

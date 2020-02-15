@@ -88,7 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-
+  p->priority = 15; // needs to be here before the release. dont know why though 
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -112,6 +112,7 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+ 
   return p;
 }
 
@@ -371,37 +372,74 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+  int min = 31;//by default to be replaced by real min later on
+   
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
-    // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
-
+    min = 31; 
+	//this will tak care of looking for the process with the highest priority(with the lowest priority value)
+     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ 
+         if(p->state != RUNNABLE) {
+		continue;
+	 }
+	 if(p->priority < min) {//this finds the real min
+                min = p->priority;
+         }
+     } 				   
+    // Loop over process table looking for process to run.
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+       if(p->state != RUNNABLE) {//NEW
+		continue;
+       }	
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
+      if(min == p->priority) {
+        	c->proc = p;
+      		switchuvm(p);
+      		p->state = RUNNING;
+      		swtch(&(c->scheduler), p->context);
+      		switchkvm();
       // Process is done running for now.
       // It should have changed its p->state before coming back.
-      c->proc = 0;
-    }
-    release(&ptable.lock);
-
-  }
+      		c->proc = 0;
+		if(p->priority > 31) {
+			p->priority = 31;
+		}
+		else {
+			p->priority = p->priority + 1;
+		}
+      	}
+	if(min < p->priority) {
+		printf(1, "Current Priority Value: %d \n: ", p->priority);
+		p->priority = p->priority - 1;
+	}
+	else if(p->priority < 0) {
+		p->priority = 0;
+	}
+    }		
+	release(&ptable.lock);	   
+  } 
+}
+  
+int getpriority(void) {
+	//struct proc *currproc = myproc();
+	return myproc()->priority;
+	//currproc->priority;
 }
 
-// Enter scheduler.  Must hold only ptable.lock
+int setpriority(int prior) {
+	//acquire(&ptable.lock);
+	struct proc *currproc = myproc();
+	acquire(&ptable.lock);
+	currproc->priority = prior;
+	release(&ptable.lock);
+	return 0;
+}
+
+// Entier scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this
 // kernel thread, not this CPU. It should
@@ -578,3 +616,5 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+

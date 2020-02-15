@@ -8,6 +8,9 @@ void exit(int status) __attribute__((noreturn)); //this is what we added
 //int wait(void);
 int wait(int *status); //we added this too just to change the parameter
 int waitpid(int pid, int *status, int options); //we added this because we created out own waitpid function
+int setpriority(int prior); //we added this because we created out own setpriority functoion
+int getpriority(void);	//we added this
+
 int pipe(int*);
 int write(int, const void*, int);
 int read(int, void*, int);
